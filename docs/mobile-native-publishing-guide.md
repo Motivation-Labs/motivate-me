@@ -12,6 +12,7 @@ Technical guide for shipping the Motivate Me PWA as a native app on iOS (App Sto
 4. [iOS App Store Publishing](#4-ios-app-store-publishing)
 5. [Google Play Store Publishing](#5-google-play-store-publishing)
 6. [Recommended Path for Motivate Me](#6-recommended-path-for-motivate-me)
+7. [Transferring from Individual to Organization Account](#7-transferring-from-individual-to-organization-account)
 
 ---
 
@@ -369,6 +370,219 @@ Google requires a data safety declaration:
 | D-U-N-S number | — | Free |
 | **Year 1 total** | **$124** | **$174–624** |
 | **Ongoing annual** | **$99** | **$99 + LLC annual fees** |
+
+---
+
+## 7. Transferring from Individual to Organization Account
+
+If you launch under a personal account and later want to move to a company/organization account, the process differs significantly between Apple and Google.
+
+---
+
+### Apple App Store: Individual → Organization Transfer
+
+Apple does **not** allow converting an individual account to an organization account in place. You have two paths:
+
+#### Path A: Enroll a New Organization Account + Transfer Apps
+
+This is the recommended approach. You create a second (organization) developer account and transfer each app to it.
+
+**Step 1 — Register your business entity**
+
+- Form an LLC, Corp, or equivalent legal entity in your jurisdiction
+- Obtain an EIN (Employer Identification Number) from the IRS if in the US
+- Get a D-U-N-S number for the entity (free, 5–14 business days)
+- Set up a company website with a publicly accessible domain and email (Apple verifies this)
+
+**Step 2 — Enroll in Apple Developer Program as Organization**
+
+- Go to https://developer.apple.com/programs/enroll/
+- Sign in with a **new Apple ID** (or a different one from your individual account)
+- Select "Organization" and provide:
+  - Legal entity name
+  - D-U-N-S number
+  - Company website URL
+  - A work email at your company domain (e.g., dev@motivateme.com — not Gmail/Yahoo)
+- Apple will verify your organization (phone call from Apple to the number listed in D&B records)
+- Enrollment takes **3–14 business days** after submission
+- Pay the $99/year fee
+
+**Step 3 — Initiate app transfer**
+
+1. In [App Store Connect](https://appstoreconnect.apple.com) on the **source** (individual) account:
+   - Go to the app → **App Information** → scroll to **Transfer App**
+   - Click "Transfer App"
+2. Enter the **recipient's Team ID** (found in the org account's Membership page)
+3. Accept the transfer on the **destination** (organization) account
+
+**Transfer prerequisites — all must be true:**
+
+| Requirement | Details |
+|---|---|
+| No pending app versions | Remove any builds in "Waiting for Review" or "In Review" |
+| No TestFlight beta testing | End all active TestFlight beta tests |
+| At least one approved version | App must have been published at least once |
+| No iCloud entitlements | Apps using CloudKit cannot be transferred |
+| No Apple Wallet passes | Apps with associated passes cannot be transferred |
+| Bundle ID is available | The bundle ID must not conflict with an app on the destination account |
+| Recipient accepts the transfer | Must accept within 60 days or the transfer expires |
+
+**What transfers:**
+
+- App metadata, ratings, and reviews
+- Current and past versions
+- Customer data (downloads, in-app purchases, subscriptions)
+- App Analytics history
+- Bundle ID ownership
+
+**What does NOT transfer:**
+
+- Certificates and provisioning profiles (must recreate on the new account)
+- TestFlight testers (must re-invite)
+- Promo codes
+- Crash reports older than the transfer date
+- App Store Connect Users / roles
+
+**Step 4 — Post-transfer cleanup**
+
+- Generate new signing certificates and provisioning profiles on the org account
+- Update CI/CD pipelines with new credentials
+- Re-invite TestFlight testers
+- Update the app's signing identity in Xcode and rebuild
+- Cancel the individual developer account if no longer needed (Apple will not prorate the annual fee)
+
+**Timeline:** 1–3 business days for the transfer itself, after both accounts are set up.
+
+#### Path B: Contact Apple to Convert Account Type
+
+Apple occasionally allows direct account type conversion in limited circumstances. This is not a self-service process.
+
+1. Contact Apple Developer Support at https://developer.apple.com/contact/
+2. Select "Membership and Account" → "Account enrollment and type"
+3. Explain that you want to convert from individual to organization
+4. Apple may ask for:
+   - Proof of business registration
+   - D-U-N-S number
+   - Articles of incorporation
+   - Verification call
+
+**This path is unreliable** — Apple may approve or deny it at their discretion. If denied, you must use Path A.
+
+---
+
+### Google Play Store: Individual → Organization Transfer
+
+Google's process is more straightforward than Apple's.
+
+#### Option 1: Convert Existing Account to Organization (Preferred)
+
+Google allows changing your developer account type from individual to organization without creating a new account. Your apps, listings, and data stay in place.
+
+**Step 1 — Prepare your business entity**
+
+- Form your legal entity (LLC, Corp, etc.)
+- Obtain a D-U-N-S number (required since 2023 for organization accounts)
+- Have a company website and email domain ready
+
+**Step 2 — Request account type change**
+
+1. Sign in to [Google Play Console](https://play.google.com/console)
+2. Go to **Settings** → **Developer account** → **Account details**
+3. Under "Account type," click **Request organization verification**
+4. Provide:
+   - Legal organization name
+   - D-U-N-S number
+   - Organization address
+   - Organization phone number
+   - Organization website
+   - A contact email at your company domain
+5. Google will verify the organization (typically 3–7 business days)
+
+**What changes:**
+
+- Store listing shows organization name instead of your personal name
+- Account gains organization-level features (team management, etc.)
+
+**What stays the same:**
+
+- All apps remain on the same account — no transfer needed
+- App listings, ratings, reviews, download history preserved
+- Signing keys unchanged
+- Same developer account ID and Play Console access
+
+**Step 3 — Update store listing**
+
+After conversion, review your store listing to ensure the developer name, contact info, and privacy policy reflect the organization.
+
+#### Option 2: Create New Organization Account + Transfer Apps
+
+If you prefer a clean separation or Google denies the account type change:
+
+**Step 1 — Create a new Google Play Developer account**
+
+- Register at https://play.google.com/console/signup with a different Google account
+- Select "Organization" account type
+- Pay the $25 one-time fee
+- Complete organization verification (D-U-N-S, identity documents)
+
+**Step 2 — Transfer apps**
+
+1. On the **source** account in Play Console:
+   - Go to **All apps** → select the app → **Setup** → **Advanced settings**
+   - Under "Transfer app," click **Transfer app**
+2. Enter the **developer account ID** of the destination organization account
+3. The destination account must accept the transfer in Play Console
+
+**Transfer prerequisites:**
+
+| Requirement | Details |
+|---|---|
+| No pending policy violations | Resolve any active policy issues first |
+| App must be published | At least one version must have been released |
+| No managed publishing pending | Complete any pending releases |
+| Destination account in good standing | No strikes or suspensions |
+| App signing key | If using Play App Signing, the key transfers automatically |
+
+**What transfers:**
+
+- App listing and metadata
+- Ratings and reviews
+- Download / install statistics
+- In-app products and subscriptions
+- App signing key (if using Play App Signing)
+- User base and update path (users receive updates seamlessly)
+
+**What does NOT transfer:**
+
+- Financial / earnings reports (stay on original account)
+- Order management history
+- Play Console user access / permissions
+- Acquisition and retention reports
+
+**Timeline:** Transfer completes within a few hours to 2 business days.
+
+---
+
+### Side-by-Side: Transfer Process Comparison
+
+| | Apple App Store | Google Play Store |
+|---|---|---|
+| **In-place conversion** | Not officially supported (must contact Apple) | Supported — request org verification in settings |
+| **App transfer** | Supported via App Store Connect | Supported via Play Console |
+| **New account needed** | Yes (for reliable path) | No (in-place conversion preferred) |
+| **Ratings & reviews preserved** | Yes (on transfer) | Yes (both paths) |
+| **Signing credentials** | Must regenerate on new account | Unchanged (in-place) or auto-transferred (Play App Signing) |
+| **User update path** | Seamless — same bundle ID | Seamless — same package name |
+| **Downtime** | Minimal (app stays live during transfer) | None (in-place) or minimal (transfer) |
+| **Cost** | $99/year for new org account | $0 (in-place) or $25 (new account) |
+| **Timeline** | 1–3 weeks total (org enrollment + transfer) | 3–7 days (verification only) |
+| **Complexity** | High — certificates, profiles, TestFlight must be redone | Low — mostly administrative |
+
+### Recommended Sequence for Motivate Me
+
+1. **Google Play first** — request in-place conversion to organization. Zero app disruption, done in a week.
+2. **Apple after** — enroll new org account, transfer the app. More steps, but ratings and reviews carry over.
+3. **Cancel** the individual Apple Developer account once the transfer is confirmed and the org account is handling all builds.
 
 ---
 
