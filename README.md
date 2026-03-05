@@ -1,73 +1,108 @@
-# React + TypeScript + Vite
+# Motivate Me
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A habit-tracking PWA that gamifies self-improvement through a point-and-reward system. Earn points by completing habits, then spend them on real-world rewards you define yourself.
 
-Currently, two official plugins are available:
+**Live app:** [motivateme-cyan.vercel.app](https://motivateme-cyan.vercel.app)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## What It Does
 
-## React Compiler
+- **Define your own habits** — set point values, frequency targets, and optionally require photo proof
+- **Log completions** — earn points for every habit you complete, with streak bonuses for consistency
+- **Set up rewards** — create offline (physical items) or online (URL-linked) rewards with custom point costs
+- **Wishlist tracking** — save rewards you're working toward with a progress bar showing how close you are
+- **Monitor system** — invite a friend, partner, or parent to observe your progress and approve high-stakes redemptions
+- **Profile management** — customize your display name, avatar, and gender
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Screenshots
 
-## Expanding the ESLint configuration
+The UI is designed to be gamified and playful — bright colors, satisfying interactions, and visible progress on every screen. Mobile-first, installable as a PWA.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech Stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+| Layer | Technology |
+|---|---|
+| Frontend | React 19 + TypeScript |
+| Bundler | Vite |
+| Styling | Tailwind CSS v4 |
+| Routing | React Router v7 |
+| Backend | Supabase (PostgreSQL + Auth + Storage) |
+| Auth | Magic link (email only, no passwords) |
+| Deployment | Vercel |
+| Testing | Vitest + React Testing Library |
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Getting Started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Prerequisites
+
+- Node.js 18+
+- A [Supabase](https://supabase.com) project
+
+### Setup
+
+```bash
+# Clone the repo
+git clone https://github.com/beingzy/motivate-me.git
+cd motivate-me
+
+# Install dependencies
+npm install --legacy-peer-deps
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your Supabase project URL and anon key
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Create a `.env` file with:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### Database Setup
+
+Run the SQL migrations in your Supabase SQL Editor in order:
+
+1. `supabase/migrations/001_initial_schema.sql` — core tables (habits, action_logs, point_ledger, rewards, notifications)
+2. `supabase/migrations/002_monitors.sql` — monitor/accountability system
+3. `supabase/migrations/003_profiles.sql` — user profiles and avatar storage
+
+### Development
+
+```bash
+npm run dev        # Start dev server
+npm test           # Run tests (93 tests across 16 files)
+npm run build      # Production build
+npm run lint       # ESLint
+```
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── AuthGate.tsx          # Auth-gated route wrapper
+│   └── ui/                   # Shared UI components (AppShell, BottomNav)
+├── lib/
+│   ├── auth.tsx              # Auth provider + magic link sign-in
+│   ├── db.ts                 # Supabase CRUD operations
+│   ├── store.tsx             # App state with optimistic updates
+│   ├── profile.ts            # Profile & avatar management
+│   ├── monitors.ts           # Monitor invite & connection logic
+│   └── approvals.ts          # Action log approval/rejection
+├── pages/                    # All route pages with co-located tests
+├── types/                    # TypeScript interfaces
+└── test/                     # Test setup and helpers
+```
+
+## How Points Work
+
+- Each habit has a user-defined point value
+- Completing a habit awards points immediately (or after monitor approval)
+- Streak bonuses reward consistency (7-day, 30-day milestones)
+- Points are spent to redeem rewards — balance never goes negative
+- The point ledger is append-only for full auditability
+
+## License
+
+MIT
