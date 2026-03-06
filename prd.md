@@ -266,14 +266,50 @@ point_ledger
 
 - [x] **PWA polish + installability** — manifest.json, app icons, service worker, offline shell caching, apple-touch-icon
 
-- [ ] **User profile management** — Profile page with ID, photo, email, gender
+- [x] **User profile management** — Profile page with ID, photo, email, gender
+
+- [ ] **Monitor invites — email + copy link** — Enhance invite UX
   - **User:** Primary user
   - **Acceptance Criteria:**
-    - Profile page shows user ID (read-only), email (read-only from auth), display name (editable), gender (editable), profile photo (uploadable)
-    - Photo upload via Supabase Storage
-    - Profile data persisted to `profiles` table
-    - Me page shows profile photo and display name from profile
-  - **Tests Required:** Profile page renders all fields; save button works
+    - "Invite a Monitor" generates a link with two share options: copy to clipboard, or send via email
+    - Email option: user enters friend's email; Supabase sends invite email with the link
+    - After sending, user sees confirmation of invite status (sent / copied)
+  - **Tests Required:** Invite section renders copy and email options; email input field present
+
+- [ ] **Habit creation — monitor approval UX** — Improve approval toggle clarity
+  - **User:** Primary user
+  - **Acceptance Criteria:**
+    - CreateHabit: "Requires Monitor Approval" toggle is disabled when user has no monitors
+    - Disabled state shows tooltip icon explaining "Invite at least one monitor first"
+    - Dashboard habit cards: show a lock/approval icon for habits requiring monitor approval
+    - HabitList: show approval-required indicator on habit rows
+  - **Tests Required:** Toggle disabled when no monitors; indicator visible on habits with requiresApproval
+
+- [ ] **Remove local storage fallback** — Database-only data storage
+  - **User:** System
+  - **Acceptance Criteria:**
+    - Remove seed data initialization from store.tsx — all data comes from Supabase
+    - Remove `useSupabase` conditional; all writes go to database unconditionally
+    - Tests continue using mock context (no change to test behavior)
+  - **Tests Required:** All existing tests pass; no localStorage references remain
+
+- [ ] **Account deletion with privacy safeguards** — GDPR-style data removal
+  - **User:** Primary user
+  - **Acceptance Criteria:**
+    - "Delete My Account" button on Me page (at very bottom, below sign out)
+    - Confirmation flow: user must type their user ID to confirm
+    - On confirm: Supabase Edge Function or client-side cascade deletes all data (profiles, habits, action_logs, point_ledger, rewards, notifications, monitors, auth account)
+    - Confirmation email sent to user's email after deletion
+    - User is signed out and redirected to login
+  - **Tests Required:** Delete button renders; confirmation requires exact ID match; cancel aborts
+
+- [ ] **Rearrange Me page layout** — Move dangerous actions to bottom
+  - **User:** Primary user
+  - **Acceptance Criteria:**
+    - Page order: Profile card → Stats → Quick Links → Notifications → Sign Out → Account Deletion (very bottom)
+    - Remove old "Data Management / Reset All Data" section (replaced by account deletion)
+    - Update copy: data is stored in the cloud, not locally
+  - **Tests Required:** Delete account button renders at bottom; reset data button removed
 
 ### Backlog
 
@@ -283,7 +319,7 @@ point_ledger
 - [ ] Dark mode
 - [ ] Habit templates / starter packs
 - [ ] Export data (CSV / JSON)
-- [ ] Native app (React Native / Expo) — post-PWA phase
+- [ ] Native app (Capacitor) — post-PWA phase
 
 ---
 

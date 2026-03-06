@@ -23,7 +23,7 @@ const MOCK_USERS: Record<string, UserData> = {
   },
 }
 
-const useSupabase = !!import.meta.env.VITE_SUPABASE_URL && import.meta.env.MODE !== 'test'
+const isTestMode = import.meta.env.MODE === 'test'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   self_approved: { label: 'Self Approved', color: 'text-blue-600 bg-blue-50' },
@@ -53,21 +53,18 @@ interface PendingApproval {
 export default function MonitorDashboard() {
   const navigate = useNavigate()
   const { userId } = useParams<{ userId: string }>()
-  const [userData, setUserData] = useState<UserData | null>(null)
+
+  // Compute initial state synchronously to avoid setState in effects
+  const testMock = isTestMode && userId ? MOCK_USERS[userId] ?? null : undefined
+  const skipFetch = !userId || isTestMode
+
+  const [userData, setUserData] = useState<UserData | null>(testMock ?? null)
   const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([])
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
+  const [loading, setLoading] = useState(!skipFetch)
+  const [notFound, setNotFound] = useState(!userId || (isTestMode && !!userId && !testMock))
 
   useEffect(() => {
-    if (!userId) { setNotFound(true); setLoading(false); return }
-
-    if (!useSupabase) {
-      const mock = MOCK_USERS[userId]
-      if (mock) setUserData(mock)
-      else setNotFound(true)
-      setLoading(false)
-      return
-    }
+    if (skipFetch) return
 
     let active = true
     Promise.all([
@@ -136,7 +133,7 @@ export default function MonitorDashboard() {
     if (!error) setPendingApprovals((prev) => prev.filter((p) => p.id !== logId))
   }
 
-  const pending = useSupabase ? pendingApprovals : MOCK_PENDING
+  const pending = !isTestMode ? pendingApprovals : MOCK_PENDING
 
   return (
     <div className="flex flex-col min-h-full">

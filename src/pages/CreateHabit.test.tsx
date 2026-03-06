@@ -57,10 +57,14 @@ describe('CreateHabit', () => {
     expect(toggle).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('toggles approval switch', () => {
+  it('approval toggle is disabled when no monitors connected', () => {
     renderCreateHabit()
     const toggle = screen.getByRole('switch', { name: /Requires Monitor Approval/i })
-    fireEvent.click(toggle)
-    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    expect(toggle).toBeDisabled()
+  })
+
+  it('shows tooltip hint when approval toggle is disabled', () => {
+    renderCreateHabit()
+    expect(screen.getByText(/Invite at least one monitor/i)).toBeInTheDocument()
   })
 })

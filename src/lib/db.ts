@@ -211,3 +211,19 @@ export async function deleteAllUserData(userId: string) {
   await supabase.from('rewards').delete().eq('user_id', userId)
   await supabase.from('habits').delete().eq('user_id', userId)
 }
+
+export async function deleteAccountAndData(userId: string) {
+  // Delete all user data from every table
+  await supabase.from('notifications').delete().eq('user_id', userId)
+  await supabase.from('point_ledger').delete().eq('user_id', userId)
+  await supabase.from('action_logs').delete().eq('user_id', userId)
+  await supabase.from('rewards').delete().eq('user_id', userId)
+  await supabase.from('habits').delete().eq('user_id', userId)
+  await supabase.from('monitors').delete().eq('user_id', userId)
+  await supabase.from('monitors').delete().eq('monitor_user_id', userId)
+  await supabase.from('profiles').delete().eq('id', userId)
+
+  // Delete the auth user via RPC (requires the delete_own_account function in Supabase)
+  const { error } = await supabase.rpc('delete_own_account')
+  if (error) console.error('Failed to delete auth account:', error)
+}

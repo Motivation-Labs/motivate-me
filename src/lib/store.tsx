@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react'
 import type { Habit, ActionLog, PointLedgerEntry, Reward, AppNotification } from '../types'
 import { SEED_HABITS, SEED_LOGS, SEED_LEDGER, SEED_REWARDS, SEED_NOTIFICATIONS } from './seed'
 import { useAuth } from './auth'
@@ -6,7 +6,7 @@ import * as db from './db'
 
 const STREAK_BONUSES: Record<number, number> = { 7: 10, 30: 50, 60: 100, 90: 200 }
 
-const useSupabase = !!import.meta.env.VITE_SUPABASE_URL && import.meta.env.MODE !== 'test'
+const isTestMode = import.meta.env.MODE === 'test'
 
 function computeStreak(habitId: string, logs: ActionLog[]): number {
   const habitLogs = logs
@@ -80,23 +80,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const userId = user?.id ?? 'local-user'
 
-  const [habits, setHabits] = useState<Habit[]>(useSupabase ? [] : SEED_HABITS)
-  const [actionLogs, setActionLogs] = useState<ActionLog[]>(useSupabase ? [] : SEED_LOGS)
-  const [pointLedger, setPointLedger] = useState<PointLedgerEntry[]>(useSupabase ? [] : SEED_LEDGER)
-  const [rewards, setRewards] = useState<Reward[]>(useSupabase ? [] : SEED_REWARDS)
-  const [notifications, setNotifications] = useState<AppNotification[]>(useSupabase ? [] : SEED_NOTIFICATIONS)
-  const [loading, setLoading] = useState(useSupabase)
-
-  // Track current userId to avoid stale fetches
-  const userIdRef = useRef(userId)
-  userIdRef.current = userId
+  const [habits, setHabits] = useState<Habit[]>(!isTestMode ? [] : SEED_HABITS)
+  const [actionLogs, setActionLogs] = useState<ActionLog[]>(!isTestMode ? [] : SEED_LOGS)
+  const [pointLedger, setPointLedger] = useState<PointLedgerEntry[]>(!isTestMode ? [] : SEED_LEDGER)
+  const [rewards, setRewards] = useState<Reward[]>(!isTestMode ? [] : SEED_REWARDS)
+  const [notifications, setNotifications] = useState<AppNotification[]>(!isTestMode ? [] : SEED_NOTIFICATIONS)
+  const [loading, setLoading] = useState(!isTestMode)
 
   // Fetch all data from Supabase on auth change
   useEffect(() => {
-    if (!useSupabase || !user) return
+    if (isTestMode || !user) return
 
     let cancelled = false
-    setLoading(true)
 
     Promise.all([
       db.fetchHabits(user.id),
@@ -105,7 +100,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       db.fetchRewards(user.id),
       db.fetchNotifications(user.id),
     ]).then(([h, a, p, r, n]) => {
-      if (cancelled || userIdRef.current !== user.id) return
+      if (cancelled) return
       setHabits(h)
       setActionLogs(a)
       setPointLedger(p)
@@ -174,17 +169,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     }
     setHabits((prev) => [habit, ...prev])
-    if (useSupabase) db.insertHabit(userId, habit)
+    if (!isTestMode) db.insertHabit(userId, habit)
   }, [userId])
 
   const updateHabit = useCallback((id: string, data: Partial<Habit>) => {
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...data } : h)))
-    if (useSupabase) db.updateHabitRow(id, data)
+    if (!isTestMode) db.updateHabitRow(id, data)
   }, [])
 
   const archiveHabit = useCallback((id: string) => {
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, isActive: false } : h)))
-    if (useSupabase) db.updateHabitRow(id, { isActive: false })
+    if (!isTestMode) db.updateHabitRow(id, { isActive: false })
   }, [])
 
   // ── Log action ──
@@ -210,7 +205,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         pointsAwarded: pts,
       }
       setActionLogs((prev) => [log, ...prev])
-      if (useSupabase) db.insertActionLog(userId, log)
+      if (!isTestMode) db.insertActionLog(userId, log)
 
       // Credit points
       if (pts > 0) {
@@ -224,7 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           createdAt: now,
         }
         setPointLedger((prev) => [ledgerEntry, ...prev])
-        if (useSupabase) db.insertLedgerEntry(userId, ledgerEntry)
+        if (!isTestMode) db.insertLedgerEntry(userId, ledgerEntry)
       }
 
       // Check streak milestones (after adding the new log)
@@ -243,7 +238,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               createdAt: now,
             }
             setPointLedger((prev) => [bonusEntry, ...prev])
-            if (useSupabase) db.insertLedgerEntry(userId, bonusEntry)
+            if (!isTestMode) db.insertLedgerEntry(userId, bonusEntry)
 
             const notif: AppNotification = {
               id: crypto.randomUUID(),
@@ -253,7 +248,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               read: false,
             }
             setNotifications((prev) => [notif, ...prev])
-            if (useSupabase) db.insertNotification(userId, notif)
+            if (!isTestMode) db.insertNotification(userId, notif)
           }
           return currentLogs
         })
@@ -275,7 +270,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 }
                 setNotifications((prev) => {
                   if (prev.some((n) => n.message === notif.message)) return prev
-                  if (useSupabase) db.insertNotification(userId, notif)
+                  if (!isTestMode) db.insertNotification(userId, notif)
                   return [notif, ...prev]
                 })
               }
@@ -299,12 +294,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     }
     setRewards((prev) => [reward, ...prev])
-    if (useSupabase) db.insertReward(userId, reward)
+    if (!isTestMode) db.insertReward(userId, reward)
   }, [userId])
 
   const updateReward = useCallback((id: string, data: Partial<Reward>) => {
     setRewards((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)))
-    if (useSupabase) db.updateRewardRow(id, data)
+    if (!isTestMode) db.updateRewardRow(id, data)
   }, [])
 
   const redeemReward = useCallback(
@@ -324,12 +319,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         createdAt: now,
       }
       setPointLedger((prev) => [ledgerEntry, ...prev])
-      if (useSupabase) db.insertLedgerEntry(userId, ledgerEntry)
+      if (!isTestMode) db.insertLedgerEntry(userId, ledgerEntry)
 
       setRewards((prev) =>
         prev.map((r) => (r.id === rewardId ? { ...r, status: 'redeemed' as const } : r))
       )
-      if (useSupabase) db.updateRewardRow(rewardId, { status: 'redeemed' })
+      if (!isTestMode) db.updateRewardRow(rewardId, { status: 'redeemed' })
 
       const notif: AppNotification = {
         id: crypto.randomUUID(),
@@ -339,7 +334,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         read: false,
       }
       setNotifications((prev) => [notif, ...prev])
-      if (useSupabase) db.insertNotification(userId, notif)
+      if (!isTestMode) db.insertNotification(userId, notif)
 
       return true
     },
@@ -350,19 +345,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRewards((prev) =>
       prev.map((r) => (r.id === rewardId ? { ...r, status: 'wishlist' as const } : r))
     )
-    if (useSupabase) db.updateRewardRow(rewardId, { status: 'wishlist' })
+    if (!isTestMode) db.updateRewardRow(rewardId, { status: 'wishlist' })
   }, [])
 
   // ── Notification actions ──
 
   const markNotificationRead = useCallback((id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
-    if (useSupabase) db.updateNotificationRead(id, true)
+    if (!isTestMode) db.updateNotificationRead(id, true)
   }, [])
 
   const markAllNotificationsRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-    if (useSupabase) db.markAllNotificationsReadDb(userId)
+    if (!isTestMode) db.markAllNotificationsReadDb(userId)
   }, [userId])
 
   // ── Reset ──
@@ -373,7 +368,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPointLedger([])
     setRewards([])
     setNotifications([])
-    if (useSupabase) db.deleteAllUserData(userId)
+    if (!isTestMode) db.deleteAllUserData(userId)
   }, [userId])
 
   const value: AppContextValue = {

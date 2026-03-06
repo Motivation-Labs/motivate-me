@@ -100,6 +100,12 @@ export default function HabitList() {
                   >
                     +{habit.pointsPerCompletion} PTS
                   </span>
+                  {habit.requiresApproval && (
+                    <span className="text-amber-600 text-xs font-medium flex items-center gap-1" title="Requires monitor approval">
+                      <span className="material-symbols-outlined text-sm text-amber-500">lock</span>
+                      Approval
+                    </span>
+                  )}
                   {streak > 0 && (
                     <span className="text-slate-400 text-xs font-medium flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm text-orange-400">

@@ -35,20 +35,32 @@ describe('Me (Profile)', () => {
     expect(toggle).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('renders reset data button', () => {
-    renderMe()
-    expect(screen.getByRole('button', { name: /Reset All Data/i })).toBeInTheDocument()
-  })
-
-  it('shows reset confirmation', () => {
-    renderMe()
-    fireEvent.click(screen.getByRole('button', { name: /Reset All Data/i }))
-    expect(screen.getByText(/This will reset everything/i)).toBeInTheDocument()
-  })
-
   it('renders quick links', () => {
     renderMe()
     expect(screen.getByRole('link', { name: /Activity Log/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Notifications/i })).toBeInTheDocument()
+  })
+
+  it('renders sign out button', () => {
+    renderMe()
+    expect(screen.getByRole('button', { name: /Sign Out/i })).toBeInTheDocument()
+  })
+
+  it('renders delete account button at the bottom', () => {
+    renderMe()
+    expect(screen.getByRole('button', { name: /Delete My Account/i })).toBeInTheDocument()
+  })
+
+  it('shows delete confirmation requiring user ID input', () => {
+    renderMe()
+    fireEvent.click(screen.getByRole('button', { name: /Delete My Account/i }))
+    expect(screen.getByText(/Type your User ID to confirm/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Enter your User ID/i)).toBeInTheDocument()
+  })
+
+  it('does not have the old reset data section', () => {
+    renderMe()
+    expect(screen.queryByText(/stored locally in your browser/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Reset All Data/i })).not.toBeInTheDocument()
   })
 })

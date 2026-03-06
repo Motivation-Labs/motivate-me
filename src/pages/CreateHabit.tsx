@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 import { useApp } from '../lib/store'
+import { getMyMonitors } from '../lib/monitors'
+
+const isTestMode = import.meta.env.MODE === 'test'
 
 export default function CreateHabit() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { createHabit } = useApp()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -11,6 +16,16 @@ export default function CreateHabit() {
   const [requiresPhoto, setRequiresPhoto] = useState(false)
   const [requiresApproval, setRequiresApproval] = useState(false)
   const [frequencyTarget, setFrequencyTarget] = useState<'none' | 'daily' | 'custom'>('daily')
+  const [hasMonitors, setHasMonitors] = useState(false)
+
+  useEffect(() => {
+    if (!user || isTestMode) return
+    let active = true
+    getMyMonitors(user.id).then((monitors) => {
+      if (active) setHasMonitors(monitors.length > 0)
+    }).catch(() => {})
+    return () => { active = false }
+  }, [user])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,7 +35,7 @@ export default function CreateHabit() {
       description: description.trim() || undefined,
       pointsPerCompletion: points,
       requiresPhoto,
-      requiresApproval,
+      requiresApproval: hasMonitors ? requiresApproval : false,
       frequencyTarget,
       isActive: true,
     })
@@ -167,13 +182,22 @@ export default function CreateHabit() {
               checked={requiresPhoto}
               onChange={setRequiresPhoto}
             />
-            <Toggle
-              id="requires-approval"
-              icon="how_to_reg"
-              label="Requires Monitor Approval"
-              checked={requiresApproval}
-              onChange={setRequiresApproval}
-            />
+            <div>
+              <Toggle
+                id="requires-approval"
+                icon="how_to_reg"
+                label="Requires Monitor Approval"
+                checked={requiresApproval}
+                onChange={setRequiresApproval}
+                disabled={!hasMonitors}
+              />
+              {!hasMonitors && (
+                <p className="text-xs text-slate-400 ml-14 mt-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">info</span>
+                  Invite at least one monitor to enable this
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Submit */}
@@ -204,11 +228,12 @@ interface ToggleProps {
   label: string
   checked: boolean
   onChange: (v: boolean) => void
+  disabled?: boolean
 }
 
-function Toggle({ id, icon, label, checked, onChange }: ToggleProps) {
+function Toggle({ id, icon, label, checked, onChange, disabled }: ToggleProps) {
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className={`flex items-center justify-between py-2 ${disabled ? 'opacity-50' : ''}`}>
       <div className="flex items-center gap-4">
         <div className="size-10 flex items-center justify-center bg-slate-100 rounded-lg">
           <span className="material-symbols-outlined text-slate-500">{icon}</span>
@@ -222,10 +247,11 @@ function Toggle({ id, icon, label, checked, onChange }: ToggleProps) {
         type="button"
         role="switch"
         aria-checked={checked}
-        onClick={() => onChange(!checked)}
+        disabled={disabled}
+        onClick={() => !disabled && onChange(!checked)}
         className={`relative w-12 h-6 rounded-full transition-colors ${
           checked ? 'bg-[#D35400]' : 'bg-slate-200'
-        }`}
+        } ${disabled ? 'cursor-not-allowed' : ''}`}
       >
         <span
           className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform ${

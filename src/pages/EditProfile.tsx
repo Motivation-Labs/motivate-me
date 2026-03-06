@@ -12,7 +12,7 @@ const GENDER_OPTIONS: { value: Gender | ''; label: string }[] = [
   { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ]
 
-const useSupabase = !!import.meta.env.VITE_SUPABASE_URL && import.meta.env.MODE !== 'test'
+const isTestMode = import.meta.env.MODE === 'test'
 
 export default function EditProfile() {
   const { user } = useAuth()
@@ -20,7 +20,7 @@ export default function EditProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fallbackName = user?.email?.split('@')[0] ?? ''
-  const shouldFetch = !!user && useSupabase
+  const shouldFetch = !!user && !isTestMode
 
   const [displayName, setDisplayName] = useState(shouldFetch ? '' : fallbackName)
   const [gender, setGender] = useState<Gender | ''>('')
@@ -31,7 +31,7 @@ export default function EditProfile() {
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    if (!user || !useSupabase) return
+    if (!user || !!isTestMode) return
 
     let active = true
     fetchProfile(user.id).then((profile) => {
@@ -53,7 +53,7 @@ export default function EditProfile() {
     setSaving(true)
     setSaved(false)
 
-    if (useSupabase) {
+    if (!isTestMode) {
       await upsertProfile(user.id, {
         displayName: displayName.trim() || undefined,
         gender: gender || null,
@@ -67,7 +67,7 @@ export default function EditProfile() {
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file || !user || !useSupabase) return
+    if (!file || !user || !!isTestMode) return
 
     setUploading(true)
     const result = await uploadAvatar(user.id, file)

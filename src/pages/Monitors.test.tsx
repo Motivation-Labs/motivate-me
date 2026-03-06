@@ -27,4 +27,14 @@ describe('Monitors', () => {
     renderMonitors()
     expect(screen.getByRole('button', { name: /Invite a Monitor/i })).toBeInTheDocument()
   })
+
+  it('renders email invite input', () => {
+    renderMonitors()
+    expect(screen.getByPlaceholderText(/friend's email/i)).toBeInTheDocument()
+  })
+
+  it('renders send email button', () => {
+    renderMonitors()
+    expect(screen.getByRole('button', { name: /Send Invite/i })).toBeInTheDocument()
+  })
 })

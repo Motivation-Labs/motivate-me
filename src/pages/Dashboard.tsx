@@ -162,6 +162,12 @@ export default function Dashboard() {
                         +{habit.pointsPerCompletion} pts
                       </span>
                     )}
+                    {habit.requiresApproval && (
+                      <span className="text-[10px] text-slate-400 flex items-center gap-0.5" title="Requires monitor approval">
+                        <span className="material-symbols-outlined text-xs text-amber-500">lock</span>
+                        Approval
+                      </span>
+                    )}
                     {streak > 0 && (
                       <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
                         <span className="material-symbols-outlined text-xs text-orange-400">local_fire_department</span>
