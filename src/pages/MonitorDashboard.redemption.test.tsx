@@ -31,38 +31,20 @@ function renderMonitorDashboard(userId = 'u1') {
   )
 }
 
-describe('MonitorDashboard', () => {
-  it('renders monitored user name', () => {
+describe('MonitorDashboard — pending redemptions', () => {
+  it('renders Pending Redemptions section', () => {
     renderMonitorDashboard()
-    expect(screen.getByText('Casey Lee')).toBeInTheDocument()
+    expect(screen.getByText('Pending Redemptions')).toBeInTheDocument()
   })
 
-  it('renders not found for invalid user', () => {
-    renderMonitorDashboard('invalid')
-    expect(screen.getByText('User not found')).toBeInTheDocument()
-  })
-
-  it('renders pending approvals', () => {
+  it('renders redemption approve/reject buttons for pending redemptions', () => {
     renderMonitorDashboard()
-    expect(screen.getByText('Pending Approvals')).toBeInTheDocument()
-    expect(screen.getByText('Weekend Trip')).toBeInTheDocument()
-  })
-
-  it('renders approve/reject buttons', () => {
-    renderMonitorDashboard()
+    // Mock has a pending redemption "Spa Day"
+    expect(screen.getByText('Spa Day')).toBeInTheDocument()
+    // Should have approve and reject buttons (multiple sets for action logs + redemptions)
     const approveButtons = screen.getAllByRole('button', { name: /Approve/i })
     const rejectButtons = screen.getAllByRole('button', { name: /Reject/i })
-    expect(approveButtons.length).toBeGreaterThanOrEqual(1)
-    expect(rejectButtons.length).toBeGreaterThanOrEqual(1)
-  })
-
-  it('renders recent activity', () => {
-    renderMonitorDashboard()
-    expect(screen.getByText('Recent Activity')).toBeInTheDocument()
-  })
-
-  it('renders back button', () => {
-    renderMonitorDashboard()
-    expect(screen.getByRole('button', { name: /Back/i })).toBeInTheDocument()
+    expect(approveButtons.length).toBeGreaterThanOrEqual(2) // 1 for action log + 1 for redemption
+    expect(rejectButtons.length).toBeGreaterThanOrEqual(2)
   })
 })

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { getMyMonitors, getMonitoringOthers, getPendingInvites, createMonitorInvite, revokeMonitor, sendInviteEmail } from '../lib/monitors'
+import { getMyMonitors, getMonitoringOthers, getPendingInvites, createMonitorInvite, revokeMonitor, sendInviteEmail, updateMonitorPermissions } from '../lib/monitors'
 import { fetchProfiles } from '../lib/profile'
 import { getAvatarText, AVATAR_COLORS } from '../lib/avatar'
 import { siteUrl } from '../lib/supabase'
@@ -27,6 +27,7 @@ export default function Monitors() {
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map())
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null)
+  const [localPermissions, setLocalPermissions] = useState<Map<string, { can_edit_habits: boolean; can_edit_rewards: boolean }>>(new Map())
 
   const loadData = useCallback(async () => {
     if (!user) return
@@ -148,6 +149,29 @@ export default function Monitors() {
     navigator.clipboard.writeText(link)
     setCopiedInviteId(inv.id)
     setTimeout(() => setCopiedInviteId(null), 2000)
+  }
+
+  async function handleTogglePermission(
+    monId: string,
+    current: { can_edit_habits: boolean; can_edit_rewards: boolean },
+    field: 'can_edit_habits' | 'can_edit_rewards'
+  ) {
+    const updated = { ...current, [field]: !current[field] }
+    setLocalPermissions((prev) => new Map(prev).set(monId, updated))
+    setMyMonitors((prev) =>
+      prev.map((m) => (m.id === monId ? { ...m, permissions: updated } : m))
+    )
+    if (!isTestMode) {
+      try {
+        await updateMonitorPermissions(monId, updated)
+      } catch (err) {
+        console.error('Failed to update permissions:', err)
+        // Revert on failure
+        setMyMonitors((prev) =>
+          prev.map((m) => (m.id === monId ? { ...m, permissions: current } : m))
+        )
+      }
+    }
   }
 
   function getProfileAvatar(userId: string, fallbackEmail?: string) {
@@ -411,7 +435,7 @@ export default function Monitors() {
                     </span>
                   </button>
                   {isExpanded && (
-                    <div className="px-4 pb-4 pt-0 border-t border-slate-50 space-y-2">
+                    <div className="px-4 pb-4 pt-0 border-t border-slate-50 space-y-3">
                       <div className="flex items-center gap-2 text-xs text-slate-500">
                         <span className="material-symbols-outlined text-sm">person</span>
                         <span>{avatar.displayName ?? '—'}</span>
@@ -420,9 +444,38 @@ export default function Monitors() {
                         <span className="material-symbols-outlined text-sm">email</span>
                         <span>{mon.monitorEmail ?? '—'}</span>
                       </div>
+                      {/* Permissions */}
+                      <div className="pt-1 space-y-2">
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Permissions</p>
+                        {([
+                          { key: 'can_edit_habits' as const, label: 'Can edit habits', icon: 'edit_note' },
+                          { key: 'can_edit_rewards' as const, label: 'Can edit rewards', icon: 'redeem' },
+                        ]).map((perm) => (
+                          <div key={perm.key} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-xs text-slate-600">
+                              <span className="material-symbols-outlined text-sm text-slate-400">{perm.icon}</span>
+                              <span>{perm.label}</span>
+                            </div>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={mon.permissions[perm.key]}
+                              aria-label={perm.label}
+                              onClick={() => handleTogglePermission(mon.id, mon.permissions, perm.key)}
+                              className={`relative w-9 h-5 rounded-full transition-colors ${
+                                mon.permissions[perm.key] ? 'bg-[#D35400]' : 'bg-slate-200'
+                              }`}
+                            >
+                              <span className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform ${
+                                mon.permissions[perm.key] ? 'translate-x-4' : 'translate-x-0'
+                              }`} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                       <button
                         onClick={() => handleRevoke(mon.id)}
-                        className="mt-2 text-xs text-red-500 font-semibold"
+                        className="mt-1 text-xs text-red-500 font-semibold"
                       >
                         Revoke
                       </button>

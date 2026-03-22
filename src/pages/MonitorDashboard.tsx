@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { fetchMonitoredUserData } from '../lib/monitors'
-import { fetchPendingApprovals, approveActionLog, rejectActionLog } from '../lib/approvals'
+import { fetchPendingApprovals, fetchPendingRedemptions, approveActionLog, rejectActionLog, approveRedemption, rejectRedemption } from '../lib/approvals'
 
 interface UserData {
   name: string
@@ -43,11 +43,22 @@ const MOCK_PENDING: { id: string; habitName: string; loggedAt: string; note: str
   { id: 'r1', habitName: 'Weekend Trip', loggedAt: '2026-03-05T10:00:00Z', note: null },
 ]
 
+const MOCK_PENDING_REDEMPTIONS: PendingRedemption[] = [
+  { id: 'rd1', title: 'Spa Day', pointCost: 100, createdAt: '2026-03-05T10:00:00Z' },
+]
+
 interface PendingApproval {
   id: string
   habitName: string
   loggedAt: string
   note: string | null
+}
+
+interface PendingRedemption {
+  id: string
+  title: string
+  pointCost: number
+  createdAt: string
 }
 
 export default function MonitorDashboard() {
@@ -60,6 +71,7 @@ export default function MonitorDashboard() {
 
   const [userData, setUserData] = useState<UserData | null>(testMock ?? null)
   const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([])
+  const [pendingRedemptions, setPendingRedemptions] = useState<PendingRedemption[]>([])
   const [loading, setLoading] = useState(!skipFetch)
   const [notFound, setNotFound] = useState(!userId || (isTestMode && !!userId && !testMock))
 
@@ -70,7 +82,8 @@ export default function MonitorDashboard() {
     Promise.all([
       fetchMonitoredUserData(userId),
       fetchPendingApprovals(userId),
-    ]).then(([data, pending]) => {
+      fetchPendingRedemptions(userId),
+    ]).then(([data, pending, pendingReds]) => {
         if (!active) return
         if (data.habits.length === 0 && data.recentLogs.length === 0) {
           setNotFound(true)
@@ -90,6 +103,7 @@ export default function MonitorDashboard() {
             })),
           })
           setPendingApprovals(pending)
+          setPendingRedemptions(pendingReds)
         }
         setLoading(false)
       })
@@ -133,7 +147,18 @@ export default function MonitorDashboard() {
     if (!error) setPendingApprovals((prev) => prev.filter((p) => p.id !== logId))
   }
 
+  async function handleApproveRedemption(rewardId: string) {
+    const { error } = await approveRedemption(rewardId)
+    if (!error) setPendingRedemptions((prev) => prev.filter((p) => p.id !== rewardId))
+  }
+
+  async function handleRejectRedemption(rewardId: string) {
+    const { error } = await rejectRedemption(rewardId)
+    if (!error) setPendingRedemptions((prev) => prev.filter((p) => p.id !== rewardId))
+  }
+
   const pending = !isTestMode ? pendingApprovals : MOCK_PENDING
+  const pendingReds = !isTestMode ? pendingRedemptions : MOCK_PENDING_REDEMPTIONS
 
   return (
     <div className="flex flex-col min-h-full">
@@ -216,6 +241,56 @@ export default function MonitorDashboard() {
                     </button>
                     <button
                       onClick={() => handleApprove(req.id)}
+                      className="flex-1 py-3 rounded-xl bg-green-500 text-white font-semibold text-sm hover:bg-green-600 transition-colors"
+                    >
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Pending Redemptions */}
+        <section className="space-y-3">
+          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            Pending Redemptions
+            {pendingReds.length > 0 && (
+              <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                {pendingReds.length}
+              </span>
+            )}
+          </h3>
+          {pendingReds.length === 0 ? (
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 text-center">
+              <p className="text-sm text-slate-400">No pending redemptions</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pendingReds.map((req) => (
+                <div key={req.id} className="bg-white p-5 rounded-2xl border border-purple-200 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-semibold text-slate-900">{req.title}</h4>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Requested {formatTime(req.createdAt)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 bg-[#FFB800]/10 px-2.5 py-1 rounded-full flex-shrink-0">
+                      <span className="material-symbols-outlined text-[#FFB800] text-sm">stars</span>
+                      <span className="font-bold text-[#FFB800] text-sm">{req.pointCost}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleRejectRedemption(req.id)}
+                      className="flex-1 py-3 rounded-xl bg-red-50 text-red-600 font-semibold text-sm hover:bg-red-100 transition-colors"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      onClick={() => handleApproveRedemption(req.id)}
                       className="flex-1 py-3 rounded-xl bg-green-500 text-white font-semibold text-sm hover:bg-green-600 transition-colors"
                     >
                       Approve

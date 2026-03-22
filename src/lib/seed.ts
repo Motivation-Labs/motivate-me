@@ -180,6 +180,17 @@ export const SEED_REWARDS: Reward[] = [
     status: 'wishlist',
     createdAt: daysAgo(3),
   },
+  {
+    id: 'r5',
+    userId: USER_ID,
+    title: 'Spa Day',
+    type: 'offline',
+    pointCost: 100,
+    description: 'A relaxing spa session',
+    requiresApproval: true,
+    status: 'available',
+    createdAt: daysAgo(2),
+  },
 ]
 
 export const SEED_NOTIFICATIONS: AppNotification[] = [

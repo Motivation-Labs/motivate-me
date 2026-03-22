@@ -119,6 +119,18 @@ export async function fetchMonitoredUserData(userId: string) {
   }
 }
 
+// Update a monitor's permissions
+export async function updateMonitorPermissions(
+  connectionId: string,
+  permissions: { can_edit_habits: boolean; can_edit_rewards: boolean }
+): Promise<void> {
+  const { error } = await supabase
+    .from('monitors')
+    .update({ permissions })
+    .eq('id', connectionId)
+  if (error) throw error
+}
+
 // ── Helper ──
 
 interface MonitorRow {

@@ -51,7 +51,7 @@ export interface Reward {
   url?: string
   description?: string
   requiresApproval: boolean
-  status: 'available' | 'wishlist' | 'redeemed'
+  status: 'available' | 'wishlist' | 'redeemed' | 'pending_approval'
   createdAt: string
 }
 

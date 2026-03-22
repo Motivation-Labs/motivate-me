@@ -68,7 +68,7 @@ interface AppContextValue {
   logAction: (habitId: string, note?: string, photoUrl?: string) => void
   createReward: (data: Omit<Reward, 'id' | 'userId' | 'createdAt'>) => void
   updateReward: (id: string, data: Partial<Reward>) => void
-  redeemReward: (rewardId: string) => boolean
+  redeemReward: (rewardId: string) => 'redeemed' | 'pending_approval' | false
   addToWishlist: (rewardId: string) => void
   markNotificationRead: (id: string) => void
   markAllNotificationsRead: () => void
@@ -319,12 +319,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const redeemReward = useCallback(
-    (rewardId: string): boolean => {
+    (rewardId: string): 'redeemed' | 'pending_approval' | false => {
       const reward = rewards.find((r) => r.id === rewardId)
       if (!reward || pointBalance < reward.pointCost) return false
 
       const now = new Date().toISOString()
 
+      // If approval required, set to pending — don't deduct points yet
+      if (reward.requiresApproval) {
+        setRewards((prev) =>
+          prev.map((r) => (r.id === rewardId ? { ...r, status: 'pending_approval' as const } : r))
+        )
+        if (!isTestMode) db.updateRewardRow(rewardId, { status: 'pending_approval' })
+
+        const notif: AppNotification = {
+          id: crypto.randomUUID(),
+          type: 'redemption',
+          message: `Approval requested for ${reward.title} (${reward.pointCost} pts)`,
+          timestamp: now,
+          read: false,
+        }
+        setNotifications((prev) => [notif, ...prev])
+        if (!isTestMode) db.insertNotification(userId, notif)
+
+        return 'pending_approval'
+      }
+
+      // Self-redeem: deduct points immediately
       const ledgerEntry: PointLedgerEntry = {
         id: crypto.randomUUID(),
         userId,
@@ -352,7 +373,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setNotifications((prev) => [notif, ...prev])
       if (!isTestMode) db.insertNotification(userId, notif)
 
-      return true
+      return 'redeemed'
     },
     [userId, rewards, pointBalance]
   )

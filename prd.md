@@ -1,14 +1,37 @@
 # Motivate Me — Product Requirements Document
 
-**Version:** 0.1
-**Last updated:** 2026-03-05
+**Version:** 0.2
+**Last updated:** 2026-03-22
 **Status:** Active
 
 ---
 
 ## Overview
 
-Motivate Me is a self-development PWA that gamifies habit formation through a point system. Users earn points by logging habit-related actions, then spend points to redeem rewards — real-world items (photo-logged) or online purchases (URL-linked). An optional peer-monitor layer lets invited users observe progress and approve high-stakes redemptions. The app ships as a PWA (installable on iOS and Android home screens) and will eventually migrate to a native mobile app.
+Motivate Me is a **fully self-serving** gamified habit-tracking PWA. Users earn points by logging habit completions, track streaks and weekly progress, then spend points to redeem personal rewards — physical items (photo-logged) or online purchases (URL-linked). An **optional** peer-monitor layer lets invited users observe progress and approve high-stakes actions or redemptions, but no feature requires a monitor to function. The app ships as a PWA (installable on iOS and Android home screens) and will eventually migrate to a native mobile app.
+
+### Product Functionality Summary (as of v1.3.0)
+
+| Feature | Status | Self-Serving? |
+|---|---|---|
+| Auth (magic link + password) | Complete | Yes |
+| Habit CRUD + archiving | Complete | Yes |
+| Inline action logging (dashboard) + full-page log | Complete | Yes |
+| Append-only point ledger + balance | Complete | Yes |
+| Streak tracking + milestone bonuses (7/30/60/90d) | Complete | Yes |
+| Weekly frequency progress bars | Complete | Yes |
+| Reward CRUD (offline + online types) | Complete | Yes |
+| Wishlist with progress bars + notification | Complete | Yes |
+| Reward redemption (self-serve) | Complete | Yes |
+| In-app notifications center | Complete | Yes |
+| Profile management + avatar (color+initials or photo) | Complete | Yes |
+| Account deletion with confirmation | Complete | Yes |
+| Monitor invite (link + email) + accept flow | Complete | Optional layer |
+| Monitor action log approval/rejection | Complete | Optional layer |
+| Reward approval by monitor | Complete | Optional layer |
+| Monitor permissions enforcement | Complete | Optional layer |
+
+**Self-serving verdict:** The app is fully functional without monitors. All core loops (create habits → log actions → earn points → redeem rewards) work end-to-end for a solo user.
 
 ---
 
@@ -33,13 +56,14 @@ Motivate Me is a self-development PWA that gamifies habit formation through a po
 
 | Layer | Choice |
 |---|---|
-| Framework | Next.js (App Router) |
+| Framework | React 19 + Vite (with React Router 7) |
 | Backend / DB | Supabase (PostgreSQL) |
-| Auth | Supabase Auth — magic link (email only) |
-| File storage | Supabase Storage (reward photos) |
+| Auth | Supabase Auth — magic link + password |
+| File storage | Supabase Storage (reward photos, avatars) |
 | Deployment | Vercel |
-| PWA | next-pwa or built-in Next.js service worker |
-| Styling | Tailwind CSS |
+| PWA | Service worker for offline shell caching |
+| Styling | Tailwind CSS 4 |
+| Testing | Vitest + @testing-library/react |
 
 ---
 
@@ -411,6 +435,8 @@ point_ledger
 
 ### Backlog
 
+- [x] **Reward monitor approval flow** — Complete the redemption approval UI (request → monitor approve/reject → points deducted or released)
+- [x] **Monitor permissions enforcement** — Approver authorization check on action log approve/reject; permissions display + toggle on Monitors page
 - [ ] Push notifications (web push API)
 - [ ] Redemption history detail view with photo gallery
 - [ ] Dark mode

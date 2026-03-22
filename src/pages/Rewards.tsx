@@ -8,7 +8,10 @@ export default function Rewards() {
   const { rewards, pointBalance } = useApp()
   const [tab, setTab] = useState<Tab>('available')
 
-  const filtered = rewards.filter((r) => r.status === tab)
+  const filtered = rewards.filter((r) => {
+    if (tab === 'available') return r.status === 'available' || r.status === 'pending_approval'
+    return r.status === tab
+  })
 
   return (
     <div className="flex flex-col min-h-full">
@@ -124,6 +127,7 @@ export default function Rewards() {
             {filtered.map((reward) => {
               const canAfford = pointBalance >= reward.pointCost
               const isRedeemed = reward.status === 'redeemed'
+              const isPending = reward.status === 'pending_approval'
               return (
                 <Link
                   to={`/rewards/${reward.id}`}
@@ -132,9 +136,14 @@ export default function Rewards() {
                 >
                   <div className="h-28 bg-gradient-to-br from-[#D35400]/5 to-[#FFB800]/5 flex items-center justify-center relative">
                     <span className="material-symbols-outlined text-4xl text-[#D35400]/40">redeem</span>
-                    {reward.requiresApproval && (
+                    {reward.requiresApproval && !isPending && (
                       <div className="absolute top-2 right-2 size-6 rounded-full bg-amber-100 flex items-center justify-center">
                         <span className="material-symbols-outlined text-amber-600 text-sm">lock</span>
+                      </div>
+                    )}
+                    {isPending && (
+                      <div className="absolute inset-0 bg-amber-50/60 flex items-center justify-center">
+                        <span className="text-xs font-bold text-amber-700 bg-amber-100/90 px-3 py-1 rounded-full">Pending Approval</span>
                       </div>
                     )}
                     {isRedeemed && (
@@ -142,7 +151,7 @@ export default function Rewards() {
                         <span className="text-xs font-bold text-slate-500 bg-white/90 px-3 py-1 rounded-full">Redeemed</span>
                       </div>
                     )}
-                    {reward.type === 'online' && !isRedeemed && (
+                    {reward.type === 'online' && !isRedeemed && !isPending && (
                       <div className="absolute top-2 left-2 size-6 rounded-full bg-blue-100 flex items-center justify-center">
                         <span className="material-symbols-outlined text-blue-600 text-sm">link</span>
                       </div>
@@ -154,7 +163,7 @@ export default function Rewards() {
                       <span className="material-symbols-outlined text-[#FFB800] text-sm">stars</span>
                       <span className="text-sm font-bold text-slate-700">{reward.pointCost.toLocaleString()}</span>
                     </div>
-                    {!isRedeemed && (
+                    {!isRedeemed && !isPending && (
                       <div
                         className={`w-full mt-3 py-2 rounded-xl text-sm font-semibold transition-all text-center ${
                           canAfford ? 'bg-[#D35400] text-white' : 'bg-slate-100 text-slate-400'

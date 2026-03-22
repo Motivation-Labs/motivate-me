@@ -9,6 +9,7 @@ export default function RewardDetail() {
   const reward = rewards.find((r) => r.id === id)
 
   const [redeemed, setRedeemed] = useState(false)
+  const [pendingApproval, setPendingApproval] = useState(false)
 
   if (!reward) {
     return (
@@ -26,15 +27,44 @@ export default function RewardDetail() {
   const progress = Math.min((pointBalance / reward.pointCost) * 100, 100)
   const ptsToGo = Math.max(reward.pointCost - pointBalance, 0)
   const isRedeemed = reward.status === 'redeemed' || redeemed
+  const isPending = reward.status === 'pending_approval' || pendingApproval
 
   const handleRedeem = () => {
-    const success = redeemReward(reward.id)
-    if (success) setRedeemed(true)
+    const result = redeemReward(reward.id)
+    if (result === 'redeemed') setRedeemed(true)
+    else if (result === 'pending_approval') setPendingApproval(true)
   }
 
   const handleWishlist = () => {
     addToWishlist(reward.id)
     navigate('/rewards')
+  }
+
+  if (isPending) {
+    return (
+      <div className="flex flex-col min-h-dvh bg-[#FFFAF5]">
+        <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
+          <div className="size-24 rounded-full bg-amber-100 flex items-center justify-center">
+            <span className="material-symbols-outlined text-5xl text-amber-600">hourglass_top</span>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 text-center">Approval Requested</h2>
+          <p className="text-slate-500 text-center">
+            Your request to redeem <span className="font-bold text-[#D35400]">{reward.title}</span> for {reward.pointCost.toLocaleString()} pts has been sent to your monitor for approval.
+          </p>
+          <div className="bg-white p-5 rounded-2xl border border-amber-200 w-full">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-amber-600">info</span>
+              <span className="text-sm text-amber-800">Points will be deducted once approved</span>
+            </div>
+          </div>
+          <button onClick={() => navigate('/rewards')}
+            className="w-full bg-[#D35400] py-5 rounded-2xl text-white font-bold text-lg hover:bg-[#B84700] active:scale-[0.98] transition-all"
+            style={{ boxShadow: '0 8px 24px rgba(211,84,0,0.3)' }}>
+            Back to Rewards
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (redeemed) {
@@ -127,13 +157,17 @@ export default function RewardDetail() {
           )}
         </div>
 
-        {!isRedeemed && (
+        {!isRedeemed && !isPending && (
           <div className="mt-6 pb-8 space-y-3">
             <button onClick={handleRedeem} disabled={!canAfford}
               className="w-full bg-[#D35400] py-5 rounded-2xl text-white font-bold text-lg disabled:opacity-40 hover:bg-[#B84700] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               style={{ boxShadow: canAfford ? '0 8px 24px rgba(211,84,0,0.3)' : 'none' }}>
               {canAfford ? (
-                <><span>Redeem Now</span><span className="material-symbols-outlined text-xl">arrow_forward</span></>
+                reward.requiresApproval ? (
+                  <><span>Request Approval</span><span className="material-symbols-outlined text-xl">send</span></>
+                ) : (
+                  <><span>Redeem Now</span><span className="material-symbols-outlined text-xl">arrow_forward</span></>
+                )
               ) : (
                 <span>Not enough points</span>
               )}
