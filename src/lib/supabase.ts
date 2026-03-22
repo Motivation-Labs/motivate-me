@@ -9,5 +9,5 @@ export const supabase = createClient(
 )
 
 // Base URL for the app — used for invite links, auth redirects, etc.
-// Set VITE_SITE_URL in production (e.g. https://app.motivationlabs.ai/motivate_me)
+// Production: https://me.motivationslabs.ai
 export const siteUrl = (import.meta.env.VITE_SITE_URL as string) || window.location.origin
