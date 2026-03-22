@@ -2,10 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { approveActionLog, rejectActionLog } from './approvals'
 
 // Mock supabase
-const mockSelect = vi.fn()
 const mockUpdate = vi.fn()
 const mockInsert = vi.fn()
-const mockDelete = vi.fn()
 const mockEq = vi.fn()
 const mockSingle = vi.fn()
 
@@ -27,7 +25,7 @@ vi.mock('./supabase', () => ({
       }
       if (table === 'point_ledger') return { insert: mockInsert }
       if (table === 'notifications') return { insert: mockInsert }
-      return { select: mockSelect, update: mockUpdate, insert: mockInsert }
+      return { select: vi.fn(), update: mockUpdate, insert: mockInsert }
     }),
     auth: {
       getUser: vi.fn().mockResolvedValue({

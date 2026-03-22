@@ -27,7 +27,6 @@ export default function Monitors() {
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map())
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null)
-  const [localPermissions, setLocalPermissions] = useState<Map<string, { can_edit_habits: boolean; can_edit_rewards: boolean }>>(new Map())
 
   const loadData = useCallback(async () => {
     if (!user) return
@@ -157,7 +156,6 @@ export default function Monitors() {
     field: 'can_edit_habits' | 'can_edit_rewards'
   ) {
     const updated = { ...current, [field]: !current[field] }
-    setLocalPermissions((prev) => new Map(prev).set(monId, updated))
     setMyMonitors((prev) =>
       prev.map((m) => (m.id === monId ? { ...m, permissions: updated } : m))
     )
